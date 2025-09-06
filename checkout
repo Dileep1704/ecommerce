@@ -1,0 +1,152 @@
+<?php
+require_once 'includes/session.php';
+require_once 'includes/db.php';
+require_once 'includes/functions.php';
+
+// Get cart items
+$stmt = $pdo->prepare("
+    SELECT c.id as cart_id, p.*, c.quantity 
+    FROM cart c 
+    JOIN products p ON c.product_id = p.id 
+    WHERE c.user_id = ?
+");
+$stmt->execute([$_SESSION['user_id']]);
+$cart_items = $stmt->fetchAll();
+
+// Calculate total
+$total = 0;
+foreach ($cart_items as $item) {
+    $total += $item['price'] * $item['quantity'];
+}
+
+// Handle checkout
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && !empty($cart_items)) {
+    try {
+        $pdo->beginTransaction();
+        
+        // Create order
+        $stmt = $pdo->prepare("INSERT INTO orders (user_id, total_amount) VALUES (?, ?)");
+        $stmt->execute([$_SESSION['user_id'], $total]);
+        $order_id = $pdo->lastInsertId();
+        
+        // Add order items
+        foreach ($cart_items as $item) {
+            $stmt = $pdo->prepare("
+                INSERT INTO order_items (order_id, product_id, quantity, price)
+                VALUES (?, ?, ?, ?)
+            ");
+            $stmt->execute([$order_id, $item['id'], $item['quantity'], $item['price']]);
+            
+            // Update product stock
+            $stmt = $pdo->prepare("UPDATE products SET stock_quantity = stock_quantity - ? WHERE id = ?");
+            $stmt->execute([$item['quantity'], $item['id']]);
+        }
+        
+        // Clear cart
+        $stmt = $pdo->prepare("DELETE FROM cart WHERE user_id = ?");
+        $stmt->execute([$_SESSION['user_id']]);
+        
+        $pdo->commit();
+        
+        $_SESSION['success'] = "Order placed successfully! Order ID: #$order_id";
+        redirect('my_orders.php');
+    } catch (Exception $e) {
+        $pdo->rollBack();
+        $_SESSION['error'] = "Error processing order: " . $e->getMessage();
+    }
+}
+
+require_once 'includes/navbar.php';
+?>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout - E-Commerce Store</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="assets/css/style.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="mb-4">Checkout</h1>
+        
+        <?php if (empty($cart_items)): ?>
+            <div class="alert alert-info">Your cart is empty. <a href="index.php">Continue shopping</a></div>
+        <?php else: ?>
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h4>Order Summary</h4>
+                        </div>
+                        <div class="card-body">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Product</th>
+                                        <th>Price</th>
+                                        <th>Quantity</th>
+                                        <th>Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php foreach ($cart_items as $item): ?>
+                                        <tr>
+                                            <td><?= htmlspecialchars($item['name']) ?></td>
+                                            <td>$<?= number_format($item['price'], 2) ?></td>
+                                            <td><?= $item['quantity'] ?></td>
+                                            <td>$<?= number_format($item['price'] * $item['quantity'], 2) ?></td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <th colspan="3">Total:</th>
+                                        <th>$<?= number_format($total, 2) ?></th>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h4>Payment Information</h4>
+                        </div>
+                        <div class="card-body">
+                            <form method="post">
+                                <div class="mb-3">
+                                    <label for="card_number" class="form-label">Card Number</label>
+                                    <input type="text" class="form-control" id="card_number" placeholder="4242 4242 4242 4242" required>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="expiry" class="form-label">Expiry Date</label>
+                                        <input type="text" class="form-control" id="expiry" placeholder="MM/YY" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="cvc" class="form-label">CVC</label>
+                                        <input type="text" class="form-control" id="cvc" placeholder="123" required>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="name" class="form-label">Name on Card</label>
+                                    <input type="text" class="form-control" id="name" placeholder="John Doe" required>
+                                </div>
+                                <button type="submit" class="btn btn-primary w-100">Place Order</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        <?php endif; ?>
+    </div>
+
+    <?php require_once 'includes/footer.php'; ?>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
