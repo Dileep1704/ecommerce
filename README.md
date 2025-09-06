@@ -1,26 +1,27 @@
-# 🛒 E-commerce Website (using MySQL and PHP)
+# E-Commerce Website (PHP & MySQL)
 
- This fully functional **E-Commerce web application** was created with **PHP** and **MySQL**.  
- It has a **admin dashboard** for managing users, orders, and products in addition to **customer-facing pages**.
+ This is a complete **E-Commerce web application** made with **PHP** and **MySQL**.  
+ It has both **customer-facing pages** and a **admin dashboard** that lets you manage orders, products, and users.
 
 
  ---
 
- ## Characteristics
+ ## 🚀 Things to Do
 
  ### Client
- Sort products by categories, such as furniture, electronics, and clothing.
- View product details, add items to your cart, check out, register and log in, view order history, and get live chat assistance
+ - Look through products by type, like Clothing, Electronics, Furniture, etc.
+ - See product information - Add items to your cart - Go through the checkout process - Sign up and log in - See your order history - Get help through live chat
 
- ### Admin-Manage categories-Manage users-View and manage orders-Manage products (Add, Edit, Delete)
- - Profile management - admin chat panel
-
- ---
-
- ## 🛠️ Tech Stack: **Frontend:** HTML, CSS, PHP: **Backend:** PHP (procedural): **Database:** MySQL (ecommerce.sql provided): **AJAX:** For search functionality: **Authentication:** PHP sessions, password hashing
+ - Admin: Add, edit, and delete products; manage categories; manage users; view and manage orders;
+ - Chat panel for admins - Managing profiles
 
  ---
 
- ## ⚙️ Setup
+ ## 🛠️ Tech Stack - Frontend: HTML, CSS, PHP - Backend: PHP (procedural) - Database: MySQL (`ecommerce.sql` provided) - AJAX: For search functionality - Authentication: PHP sessions, password hashing
 
- 1. Clone this repository: https://github.com/YOUR-USERNAME/ecommerce.git ``bash git clone
+ ---
+
+ ## ⚙️ Set up
+
+ 1. Clone this repository:```bash
+   git clone https://github.com/Dileep1704/ecommerce.git
